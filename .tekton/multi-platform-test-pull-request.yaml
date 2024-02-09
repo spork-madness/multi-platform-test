@@ -146,11 +146,40 @@ spec:
               value: task
           resolver: bundles
       - name: clone-repository
-        params:
-          - name: url
-            value: $(params.git-url)
-          - name: revision
-            value: $(params.revision)
+        matrix:
+          include: 
+          - name: clone-repository-amd64
+            params:
+              - name: url
+                value: $(params.git-url)
+              - name: revision
+                value: $(params.revision)
+              - name: workspace
+                value: workspace
+          - name: clone-repository-arm64
+            params:
+              - name: url
+                value: $(params.git-url)
+              - name: revision
+                value: $(params.revision)
+              - name: workspace
+                value: workspace-arm64
+          - name: clone-repository-ppc64le
+            params:
+              - name: url
+                value: $(params.git-url)
+              - name: revision
+                value: $(params.revision)
+              - name: workspace
+                value: workspace-ppc64le
+          - name: clone-repository-s390x
+            params:
+              - name: url
+                value: $(params.git-url)
+              - name: revision
+                value: $(params.revision)
+              - name: workspace
+                value: workspace-s390x
         runAfter:
           - init
         taskRef:
@@ -169,134 +198,109 @@ spec:
               - "true"
         workspaces:
           - name: output
-            workspace: workspace
+            workspace: $(params.workspace)
           - name: basic-auth
             workspace: git-auth
-      - name: clone-repository-arm64
-        params:
-          - name: url
-            value: $(params.git-url)
-          - name: revision
-            value: $(params.revision)
-        runAfter:
-          - init
-        taskRef:
-          kind: Task
-          params:
-            - name: name
-              value: git-clone
-            - name: bundle
-              value: quay.io/redhat-appstudio-tekton-catalog/task-git-clone:0.1@sha256:b8fddc2d36313a5cde93aba2491205f4a84e6853af6c34ede681f8339b147478
-            - name: kind
-              value: task
-          resolver: bundles
-        when:
-          - input: $(tasks.init.results.build)
-            operator: in
-            values:
-              - "true"
-        workspaces:
-          - name: output
-            workspace: workspace-arm64
-          - name: basic-auth
-            workspace: git-auth
-      - name: clone-repository-s390x
-        params:
-          - name: url
-            value: $(params.git-url)
-          - name: revision
-            value: $(params.revision)
-        runAfter:
-          - init
-        taskRef:
-          kind: Task
-          params:
-            - name: name
-              value: git-clone
-            - name: bundle
-              value: quay.io/redhat-appstudio-tekton-catalog/task-git-clone:0.1@sha256:b8fddc2d36313a5cde93aba2491205f4a84e6853af6c34ede681f8339b147478
-            - name: kind
-              value: task
-          resolver: bundles
-        when:
-          - input: $(tasks.init.results.build)
-            operator: in
-            values:
-              - "true"
-        workspaces:
-          - name: output
-            workspace: workspace-s390x
-          - name: basic-auth
-            workspace: git-auth
-      - name: clone-repository-ppc64le
-        params:
-          - name: url
-            value: $(params.git-url)
-          - name: revision
-            value: $(params.revision)
-        runAfter:
-          - init
-        taskRef:
-          kind: Task
-          params:
-            - name: name
-              value: git-clone
-            - name: bundle
-              value: quay.io/redhat-appstudio-tekton-catalog/task-git-clone:0.1@sha256:b8fddc2d36313a5cde93aba2491205f4a84e6853af6c34ede681f8339b147478
-            - name: kind
-              value: task
-          resolver: bundles
-        when:
-          - input: $(tasks.init.results.build)
-            operator: in
-            values:
-              - "true"
-        workspaces:
-          - name: output
-            workspace: workspace-ppc64le
-          - name: basic-auth
-            workspace: git-auth
-      - name: prefetch-dependencies
-        params:
-          - name: input
-            value: $(params.prefetch-input)
+      # - name: prefetch-dependencies
+      #   params:
+      #     - name: input
+      #       value: $(params.prefetch-input)
+      #   runAfter:
+      #     - clone-repository
+      #   taskRef:
+      #     params:
+      #       - name: name
+      #         value: prefetch-dependencies
+      #       - name: bundle
+      #         value: quay.io/redhat-appstudio-tekton-catalog/task-prefetch-dependencies:0.1@sha256:0b7bec23b6c08f37138a86e569835842763b3aa42f4455fd70ba3986350e07c7
+      #       - name: kind
+      #         value: task
+      #     resolver: bundles
+      #   when:
+      #     - input: $(params.hermetic)
+      #       operator: in
+      #       values:
+      #         - "true"
+      #   workspaces:
+      #     - name: source
+      #       workspace: workspace
+      - name: build-containers
+        matrix:
+          include: 
+          - name: build-container-amd64
+            params:
+              - name: IMAGE
+                value: $(params.output-image)-amd64
+              - name: DOCKERFILE
+                value: $(params.dockerfile)
+              - name: CONTEXT
+                value: $(params.path-context)
+              - name: HERMETIC
+                value: $(params.hermetic)
+              - name: PREFETCH_INPUT
+                value: $(params.prefetch-input)
+              - name: IMAGE_EXPIRES_AFTER
+                value: $(params.image-expires-after)
+              - name: COMMIT_SHA
+                value: $(tasks.clone-repository-amd64.results.commit)
+              - name: workspace
+                value: workspace
+          - name: build-container-arm64
+            params:
+              - name: IMAGE
+                value: $(params.output-image)-arm64
+              - name: DOCKERFILE
+                value: $(params.dockerfile)
+              - name: CONTEXT
+                value: $(params.path-context)
+              - name: HERMETIC
+                value: $(params.hermetic)
+              - name: PREFETCH_INPUT
+                value: $(params.prefetch-input)
+              - name: IMAGE_EXPIRES_AFTER
+                value: $(params.image-expires-after)
+              - name: COMMIT_SHA
+                value: $(tasks.clone-repository-arm64.results.commit)
+              - name: workspace
+                value: workspace-arm64
+          - name: build-container-ppc64le
+            params:
+              - name: IMAGE
+                value: $(params.output-image)-ppc64le
+              - name: DOCKERFILE
+                value: $(params.dockerfile)
+              - name: CONTEXT
+                value: $(params.path-context)
+              - name: HERMETIC
+                value: $(params.hermetic)
+              - name: PREFETCH_INPUT
+                value: $(params.prefetch-input)
+              - name: IMAGE_EXPIRES_AFTER
+                value: $(params.image-expires-after)
+              - name: COMMIT_SHA
+                value: $(tasks.clone-repository-ppc64le.results.commit)
+              - name: workspace
+                value: workspace-ppc64le
+          - name: build-container-s390x
+            params:
+              - name: IMAGE
+                value: $(params.output-image)-s390x
+              - name: DOCKERFILE
+                value: $(params.dockerfile)
+              - name: CONTEXT
+                value: $(params.path-context)
+              - name: HERMETIC
+                value: $(params.hermetic)
+              - name: PREFETCH_INPUT
+                value: $(params.prefetch-input)
+              - name: IMAGE_EXPIRES_AFTER
+                value: $(params.image-expires-after)
+              - name: COMMIT_SHA
+                value: $(tasks.clone-repository-s390x.results.commit)
+              - name: workspace
+                value: workspace-s390x
         runAfter:
           - clone-repository
-        taskRef:
-          params:
-            - name: name
-              value: prefetch-dependencies
-            - name: bundle
-              value: quay.io/redhat-appstudio-tekton-catalog/task-prefetch-dependencies:0.1@sha256:0b7bec23b6c08f37138a86e569835842763b3aa42f4455fd70ba3986350e07c7
-            - name: kind
-              value: task
-          resolver: bundles
-        when:
-          - input: $(params.hermetic)
-            operator: in
-            values:
-              - "true"
-        workspaces:
-          - name: source
-            workspace: workspace
-      - name: build-container-amd64
-        params:
-          - name: IMAGE
-            value: $(params.output-image)-amd64
-          - name: DOCKERFILE
-            value: $(params.dockerfile)
-          - name: CONTEXT
-            value: $(params.path-context)
-          - name: HERMETIC
-            value: $(params.hermetic)
-          - name: PREFETCH_INPUT
-            value: $(params.prefetch-input)
-          - name: IMAGE_EXPIRES_AFTER
-            value: $(params.image-expires-after)
-          - name: COMMIT_SHA
-            value: $(tasks.clone-repository.results.commit)
-        runAfter:
-          - prefetch-dependencies
         taskRef:
           params:
             - name: name
@@ -313,125 +317,13 @@ spec:
               - "true"
         workspaces:
           - name: source
-            workspace: workspace
-      - name: build-container-arm64
-        params:
-          - name: IMAGE
-            value: $(params.output-image)-arm64
-          - name: DOCKERFILE
-            value: $(params.dockerfile)
-          - name: CONTEXT
-            value: $(params.path-context)
-          - name: HERMETIC
-            value: $(params.hermetic)
-          - name: PREFETCH_INPUT
-            value: $(params.prefetch-input)
-          - name: IMAGE_EXPIRES_AFTER
-            value: $(params.image-expires-after)
-          - name: COMMIT_SHA
-            value: $(tasks.clone-repository.results.commit)
-          - name: PLATFORM
-            value: linux/arm64
-        runAfter:
-          - clone-repository-arm64
-        taskRef:
-          params:
-            - name: name
-              value: buildah-remote
-            - name: bundle
-              value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote:0.1@sha256:a3f49386db67af7d6c2e08870795679cc327c4c9900e2afe052de9726f006787
-            - name: kind
-              value: task
-          resolver: bundles
-        when:
-          - input: $(tasks.init.results.build)
-            operator: in
-            values:
-              - "true"
-        workspaces:
-          - name: source
-            workspace: workspace-arm64
-      - name: build-container-s390x
-        params:
-          - name: IMAGE
-            value: $(params.output-image)-s390x
-          - name: DOCKERFILE
-            value: $(params.dockerfile)
-          - name: CONTEXT
-            value: $(params.path-context)
-          - name: HERMETIC
-            value: $(params.hermetic)
-          - name: PREFETCH_INPUT
-            value: $(params.prefetch-input)
-          - name: IMAGE_EXPIRES_AFTER
-            value: $(params.image-expires-after)
-          - name: COMMIT_SHA
-            value: $(tasks.clone-repository.results.commit)
-          - name: PLATFORM
-            value: linux/s390x
-        runAfter:
-          - clone-repository-s390x
-        taskRef:
-          params:
-            - name: name
-              value: buildah-remote
-            - name: bundle
-              value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote:0.1@sha256:a3f49386db67af7d6c2e08870795679cc327c4c9900e2afe052de9726f006787
-            - name: kind
-              value: task
-          resolver: bundles
-        when:
-          - input: $(tasks.init.results.build)
-            operator: in
-            values:
-              - "true"
-        workspaces:
-          - name: source
-            workspace: workspace-s390x
-
-      - name: build-container-ppc64le
-        params:
-          - name: IMAGE
-            value: $(params.output-image)-ppc64le
-          - name: DOCKERFILE
-            value: $(params.dockerfile)
-          - name: CONTEXT
-            value: $(params.path-context)
-          - name: HERMETIC
-            value: $(params.hermetic)
-          - name: PREFETCH_INPUT
-            value: $(params.prefetch-input)
-          - name: IMAGE_EXPIRES_AFTER
-            value: $(params.image-expires-after)
-          - name: COMMIT_SHA
-            value: $(tasks.clone-repository.results.commit)
-          - name: PLATFORM
-            value: linux/ppc64le
-        runAfter:
-          - clone-repository-ppc64le
-        taskRef:
-          params:
-            - name: name
-              value: buildah-remote
-            - name: bundle
-              value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote:0.1@sha256:a3f49386db67af7d6c2e08870795679cc327c4c9900e2afe052de9726f006787
-            - name: kind
-              value: task
-          resolver: bundles
-        when:
-          - input: $(tasks.init.results.build)
-            operator: in
-            values:
-              - "true"
-        workspaces:
-          - name: source
-            workspace: workspace-ppc64le
+            workspace: $(params.workspace)
       - name: build-container
         params:
           - name: IMAGE
             value: $(params.output-image)
           - name: COMMIT_SHA
-            value: $(tasks.clone-repository.results.commit)
+            value: $(tasks.clone-repository-amd64.results.commit)
           - name: IMAGES
             value:
               - $(tasks.build-container-amd64.results.IMAGE_URL)@$(tasks.build-container-amd64.results.IMAGE_DIGEST)
@@ -439,10 +331,7 @@ spec:
               - $(tasks.build-container-s390x.results.IMAGE_URL)@$(tasks.build-container-s390x.results.IMAGE_DIGEST)
               - $(tasks.build-container-ppc64le.results.IMAGE_URL)@$(tasks.build-container-ppc64le.results.IMAGE_DIGEST)
         runAfter:
-          - build-container-amd64
-          - build-container-arm64
-          - build-container-s390x
-          - build-container-ppc64le
+          - build-containers
         taskRef:
           params:
             - name: name
