@@ -27,6 +27,10 @@ spec:
     value: .
   - name: revision
     value: '{{revision}}'
+  - name: nudgeFiles
+    value:
+      - "foo"
+      - "bar"
   pipelineSpec:
     finally:
       - name: show-sbom
